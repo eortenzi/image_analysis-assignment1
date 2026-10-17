@@ -122,7 +122,7 @@ plt.title("Resized Image")
 plt.imshow(resizedBaseImage)
 
 #STEP 1B - CONVERTING TO GREYSCALE
-grayscaledImage = grayscaleImage(numPyImage) 
+grayscaledImage = grayscaleImage(numPyImage.copy()) 
 plt.subplot(1, 3, 3)
 plt.title("Grayscaled Image")
 plt.imshow(grayscaledImage)
@@ -158,7 +158,7 @@ plt.imshow(baseImageCopy)
 
 plt.subplot(1, 4, 2)
 plt.title("Red Histogram")
-plt.fill_between(range(256), redHistogram, color = 'red', s = 10)
+plt.scatter(range(256), redHistogram, color = 'red', s = 10)
 
 plt.subplot(1, 4, 3)
 plt.title("Green Histogram")
