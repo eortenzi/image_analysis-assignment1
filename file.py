@@ -98,7 +98,31 @@ def imageHistogramsRGB(image):
             blueHistogram[(blueIntensiy)] += 1
     return redHistogram, greenHistogram, blueHistogram
 
+"""
+Images naturally have noise. Some images have more noise than others due to cicrumstances such as low light, electronic interference etc. If we use an image
+ that is naturally relatively clean of noise, we introduce Gaussian noise. This means we purposefully make the image more noisy. Adding Gaussian noise to
+  an image means we make random pixels lighter or brighter. More specifically, we add light intensity or decrease light intensity to each pixel in the image.
+   This effect could make darker areas, darker. Lighter areas, lighter. Darker areas, lighter, and lighter areas, darker.
+    (E.g. If a pixel in the image is 145 intensity. We add a Gaussian noise of +34, making the pixel now 179 intensity.)
+     - The reason we add Gaussian noise is, we then want to determine how effective certain image processing techniques are at fixing noisy images.
+      - This is so, when we have naturally noisy images, we can use these techniques to fix this noise, and make them cleaner.
+       - CONCLSION: We create a problem by adding Gaussian noise to a relatively clean image, so that when we encounter naturally noisy images, we know how to handle them.
 
+'mean = 0.0': The mean is the average 'effect' of the Gaussian noise on the image. If we take all of the Gaussian noise values we applied to the image, and calculate their
+ mean, it would equal Zero or close to Zero.
+
+'variance = 0.02': The variance is how spread the Gaussian noise values are mathematically. In other words, we rather use the Standard Deviation
+'standard deviation = 0.1414': The SD is how spread the Gaussian noise values are from the mean. That means that most noise values are +0.1414 or -0.1414 over/ lower the mean.
+
+"""
+def gaussianNoise(image, mean = 0.0, variance = 0.02):
+    
+    return image
+
+"""
+"""
+def saltAndPepperNoise(image):
+    return image
 #----- STEP 1 -----
 #We use the 'NumPY' library to open the self-portrait image
 baseImage = Image.open('selfPortrait.jpg')
@@ -151,20 +175,27 @@ plt.show()
 
 redHistogram, greenHistogram, blueHistogram = imageHistogramsRGB(numPyImage)
 
-plt.figure(figsize = (15, 6))
-plt.subplot(1, 4, 1)
+plt.figure(figsize = (15, 10))
+plt.subplot(2, 2, 1)
 plt.title("Original RGB Image")
 plt.imshow(baseImageCopy)
 
-plt.subplot(1, 4, 2)
+plt.subplot(2, 2, 2)
 plt.title("Red Histogram")
-plt.scatter(range(256), redHistogram, color = 'red', s = 10)
+plt.plot(range(256), redHistogram, color = 'red')
+plt.fill_between(range(256), redHistogram, color = 'red')
 
-plt.subplot(1, 4, 3)
+plt.subplot(2, 2, 3)
 plt.title("Green Histogram")
-plt.scatter(range(256), greenHistogram, color = 'green', s = 10)
+plt.plot(range(256), greenHistogram, color = 'green')
+plt.fill_between(range(256), greenHistogram, color = 'green')
 
-plt.subplot(1, 4, 4)
+plt.subplot(2, 2, 4)
 plt.title("Blue Histogram")
-plt.scatter(range(256), blueHistogram, color = 'blue', s = 10)
+plt.plot(range(256), blueHistogram, color = 'blue')
+plt.fill_between(range(256), blueHistogram, color = 'blue')
 plt.show()
+
+#STEP 2
+grayscaleGaussianNoise = numPyImage.copy()
+grayscaleSaltAndPepper = numPyImage.copy()
