@@ -128,7 +128,7 @@ STEP 2: We calculate the Standard Deviation by square rooting the variance as we
  - We use the '.sqrt()' function on the variance, which gives us a Standard Deviation of around 0.1414.
   - As mentioned earlier, this means MOST noise will be values around 0.1414, both in the positive and negative range.
 
-STEP 3: Next, we generate the Gaussian noise values. 
+STEP 3: Next, we generate the Gaussian noise values. REMEMBER: Every RGB channel for EVERY pixel, gets a RANDOM Gaussian Noise value!! 
  - We start with using the '.random' function to generate random numbers
   - We then use the '.normal()' function because we want the noise to be spread following a Normal Gaussian distribution This means most of the 
    noise values will be close to the mean, in both the positive (+) and negative (-) direction.
@@ -139,7 +139,7 @@ STEP 3: Next, we generate the Gaussian noise values.
     'normalizedImage.shape()': This creates the shape of the noise array. It has the exact shape of the grayscale image, to match the dimensions.
      This NumPy noise array will have these dimensions [N° of Rows, N° of Columns, Number of RGB channels], which matches the images dimensions and RGB Channels.
       
-STEP 4: Now, we ADD the Gaussian noise onto our original Grayscale image
+STEP 4: Now, we ADD the Gaussian noise onto our original Grayscale image.
 
 STEP 5: Lastly, we normalize the image. What this means is, we ensure every pixel value in our image is between 0.0 and 1.0
  - This is because, after adding noise to our image, we might end up with pixel brightnesses that go below 0 or above 1. This
@@ -159,13 +159,51 @@ def gaussianNoise(image, mean, variance):
     return noisyImage
 
 """
-BACKGROUND: 
+Salt and Pepper (S&P) refers to random pixels that have extreme intensities such as 0 (Black) or 255 (White), 
+ and it's often caused by faulty sensors or memory cell errors.
+
+BACKGROUND: This method is going to convert 9% of the total pixels in the image to either black or white.
+
+STEP 1: First, we normalize the image, the same way we did with Gaussian Noise. We technically can avoid this, but we want to maintain
+ a standard approach, similar to Gaussian. This means that if originally 255 = WHITE & 0 = BLACK, after standardization, 1 = WHITE & 0 is BLACK
+
+STEP 2: Next, we need to create our S&P noise and store it in a NumPy array. This array is then mapped onto our grayscale image.
+
+    'np.random': Generates random numbers from 
+    '.random()': Tells the first random function to generate random numbers between 0 INCLUSIVE and 1 EXCLUSIVE
+    '.shape[:2]': Takes the 'normalizedImage' array that was storing [x, y, 3] and only considers the 'x' and 'y' (REMINDER: 'x' and 'y' are the total number of rows and columns).
+     - For each of the pixels in the x * y image, we give it a random value from 0 to 1.
+      - This is because S&P affects the ENTIRE pixel, not SPECIFIC RGB channels, therefore we ONLY make 1 decision per pixel (Either it stays the same, it becomes black or becomes white.)
+       - In other words, we do not need to store the RGB channels, as we are NOT making a change to each RGB channel separately. 
+
+STEP 3: Conditions to determine whether the pixel changes to WHITE, BLACK or remains unchanged.
+ - If the random value is < 0.045, then the pixel becomes BLACK!
+ - If the random value is 0.045 >= x < 0.09, then the pixel becomes WHITE!
+ - If the random value is > 0.09, then the pixel stays UNCHANGED!
+
+STEP 4: Store these conditions in boolean arrays called 'pepperNoise' and 'saltNoise'
+ - We create 2x boolean arrays that will store either TRUE or FALSE for each pixel in the image. We pass the image in both arrays, one at a time.
+  - For every pixel in the pepperNoise array, IF it is < 0.045, then the array will store TRUE, if not FALSE.
+  - For every pixel in the saltNoise array, IF it is 0.045 >= x < 0.09, then the array will store TRUE, if not FALSE.
+   - NOTE: Any pixel set to TRUE in the pepperNoise array, CANNOT be also TRUE in the saltNoise array.
+    The same pixel in BOTH arrays, CAN be FALSE, as it indicates that the pixel remains unchanged.
+
+REMINDER: The amount set to 0.09 is essentially the probability of a pixel changing to either black or white. Since we set that any random value
+ over 0.09 remains unchanged, the vast majority of the pixels will not change!
 """
 def saltAndPepperNoise(image, amount):
     normalizedImage = image.astype(np.float32) / 255.00
 
-    saltAndPepperNoise = np.random(normalizedImage.shape)
-    return image
+    randomNoiseValues = np.random.random(normalizedImage.shape[:2])
+
+    pepperNoise = randomNoiseValues < amount / 2
+    saltNoise = (randomNoiseValues >= amount / 2) & (randomNoiseValues < amount)
+
+    noisyImage = normalizedImage.copy()
+    noisyImage[pepperNoise] = 0.0
+    noisyImage[saltNoise] = 1.0
+
+    return noisyImage
 #----- STEP 1 -----
 #We use the 'NumPY' library to open the self-portrait image
 baseImage = Image.open('selfPortrait.jpg')
@@ -242,18 +280,19 @@ plt.show()
 #STEP 2 - Applying Gaussian Noise && Salt and Pepper Noise to our Grayscale
 plt.figure(figsize = (15, 6))
 plt.subplot(1, 3, 1)
-plt.title("Original Grayscaled Image")
+plt.title("Original Grayscale Image")
 plt.imshow(grayscaledImage)
+plt.axis("off")
 
-gaussianNoiseImage = grayscaleImage(numPyImage.copy(), 0.0, 0.02)
+gaussianNoiseImage = gaussianNoise(grayscaledImage.copy(), 0.0, 0.02)
 plt.subplot(1, 3, 2)
-plt.title("Gaussian Noise")
+plt.title("With Gaussian Noise")
 plt.imshow(gaussianNoiseImage)
 plt.axis("off")
 
-grayscaleSaltAndPepperImage = grayscaleImage(numPyImage.copy(), 0.09)
+grayscaleSaltAndPepperImage = saltAndPepperNoise(grayscaledImage.copy(), 0.09)
 plt.subplot(1, 3, 3)
-plt.title("Salt and Pepper Noise")
+plt.title("With Salt and Pepper Noise")
 plt.axis("off")
 plt.imshow(grayscaleSaltAndPepperImage)
 plt.show()
