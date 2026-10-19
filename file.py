@@ -204,7 +204,11 @@ def saltAndPepperNoise(image, amount):
     noisyImage[saltNoise] = 1.0
 
     return noisyImage
-#----- STEP 1 -----
+
+#-----------------------
+#----- Question 1A -----
+#-----------------------
+
 #We use the 'NumPY' library to open the self-portrait image
 baseImage = Image.open('selfPortrait.jpg')
 plt.figure(figsize = (15, 6))
@@ -218,7 +222,7 @@ plt.imshow(baseImageCopy)
 #Next, we need to convert the base image into a NumPy array
 numPyImage = np.array(baseImageCopy)
 
-#----- STEP 1A - IMAGE RESIZING
+#----- 1.A.1 - IMAGE RESIZING
 #We resize our image to 512 by 512 pixels and store it in a variable called 'resizeBaseImage'
 resizedBaseImage = resize(numPyImage, (512, 512))
 #We then show it using the '.imshow()' method
@@ -226,14 +230,14 @@ plt.subplot(1, 3, 2)
 plt.title("Resized Image")
 plt.imshow(resizedBaseImage)
 
-#STEP 1B - CONVERTING TO GREYSCALE
+#----- 1.A.2 - CONVERTING TO GREYSCALE
 grayscaledImage = grayscaleImage(numPyImage.copy()) 
 plt.subplot(1, 3, 3)
 plt.title("Grayscaled Image")
 plt.imshow(grayscaledImage)
 plt.show()
 
-#STEP 1C - DISPLAYING IMAGE HISTOGRAM for Grayscale IMAGE && for RGB IMAGES
+#----- 1.A.3 - DISPLAYING IMAGE HISTOGRAM for Grayscale IMAGE && for RGB IMAGES
 plt.figure(figsize = (15, 6))
 plt.subplot(1, 2, 1)
 plt.title("Grayscaled Image")
@@ -277,22 +281,48 @@ plt.plot(range(256), blueHistogram, color = 'blue')
 plt.fill_between(range(256), blueHistogram, color = 'blue')
 plt.show()
 
-#STEP 2 - Applying Gaussian Noise && Salt and Pepper Noise to our Grayscale
+#-----------------------
+#----- Question 1B -----
+#-----------------------
+#Applying Gaussian Noise && Salt and Pepper Noise to our Grayscale
+
+#----- 1.B.1 - Output original grayscale image
 plt.figure(figsize = (15, 6))
 plt.subplot(1, 3, 1)
 plt.title("Original Grayscale Image")
 plt.imshow(grayscaledImage)
 plt.axis("off")
 
+#----- 1.B.2 - Output Gaussian Noise image
 gaussianNoiseImage = gaussianNoise(grayscaledImage.copy(), 0.0, 0.02)
 plt.subplot(1, 3, 2)
 plt.title("With Gaussian Noise")
 plt.imshow(gaussianNoiseImage)
 plt.axis("off")
 
-grayscaleSaltAndPepperImage = saltAndPepperNoise(grayscaledImage.copy(), 0.09)
+#----- 1.B.3 - Output Salt & Pepper Noise image
+saltAndPepperImage = saltAndPepperNoise(grayscaledImage.copy(), 0.09)
 plt.subplot(1, 3, 3)
 plt.title("With Salt and Pepper Noise")
 plt.axis("off")
-plt.imshow(grayscaleSaltAndPepperImage)
+plt.imshow(saltAndPepperImage)
 plt.show()
+
+#-----------------------
+#----- Question 1C -----
+#-----------------------
+#Apply Roberts, Prewitt, Sobel and Canny Edge Detectors in our Gaussian and S&G images
+
+#----- 1.C.1 - Apply Roberts Edge Detection (FIRST-ORDER Derivative)
+robertsImage = robertsEdgeDetection(grayscaledImage.copy())
+
+#----- 1.C.2 - Apply Prewitt Edge Detection (FIRST-ORDER Derivative)
+prewittImage = prewittEdgeDetection(grayscaledImage.copy())
+
+#----- 1.C.3 - Apply Sobel Edge Detection (FIRST-ORDER Derivative)
+sobelImage = sobelEdgeDetection(grayscaledImage.copy())
+
+#----- 1.C.4 - Apply Canny Edge Detection (Advanced FIRST-ORDER Derivative)
+cannyImage = cannyEdgeDetection(grayscaledImage.copy())
+
+
