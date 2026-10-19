@@ -108,20 +108,63 @@ Images naturally have noise. Some images have more noise than others due to cicr
       - This is so, when we have naturally noisy images, we can use these techniques to fix this noise, and make them cleaner.
        - CONCLSION: We create a problem by adding Gaussian noise to a relatively clean image, so that when we encounter naturally noisy images, we know how to handle them.
 
+BACKGROUND: This method introduces Gaussian Noise to an RGB portrait image
 'mean = 0.0': The mean is the average 'effect' of the Gaussian noise on the image. If we take all of the Gaussian noise values we applied to the image, and calculate their
  mean, it would equal Zero or close to Zero.
 
 'variance = 0.02': The variance is how spread the Gaussian noise values are mathematically. In other words, we rather use the Standard Deviation
 'standard deviation = 0.1414': The SD is how spread the Gaussian noise values are from the mean. That means that most noise values are +0.1414 or -0.1414 over/ lower the mean.
 
-"""
-def gaussianNoise(image, mean = 0.0, variance = 0.02):
+STEP 1: First, since the mean, variance and standard deviation are STANDARDIZED, meaning in a range between 0 and 1, we need to normalize our image too.
+ - By normalizing it, that means the R, G and B values for each pixel, have to be a value between 0 and 1.
+  - Before this method our 'image' is storing this [x, y, z] for EVERY PIXEL in the image as INT numbers. x being the RED channel, y being the BLUE channel, z being the GREEN channel.
+   - After this method our 'image' is storing each of the RGB channels as FLOAT numbers. 
+   
+   '.astype()': Converts the values in the NumPy array into a dfferent data type
+   'np.float32': Specifies the new data type, AKA 32-Bit Floating Point numbers
+   '/ 255.00': Divides each RGB channel for each pixel by a 255 to give the normalized RGB values for each pixel. NOTE: Its 255.00 because it is a floating-point division
+
+STEP 2: We calculate the Standard Deviation by square rooting the variance as we are spreading the noise using a Normal Guassian Distribution
+ - We use the '.sqrt()' function on the variance, which gives us a Standard Deviation of around 0.1414.
+  - As mentioned earlier, this means MOST noise will be values around 0.1414, both in the positive and negative range.
+
+STEP 3: Next, we generate the Gaussian noise values. 
+ - We start with using the '.random' function to generate random numbers
+  - We then use the '.normal()' function because we want the noise to be spread following a Normal Gaussian distribution This means most of the 
+   noise values will be close to the mean, in both the positive (+) and negative (-) direction.
+    - Noise values that are far from Zero, can happen but rarely.
     
-    return image
+    'mean': Provide the mean as an argument as we need it for our Normal distribution
+    'StandardDeviation': Provide the SD as we need it for the distribution
+    'normalizedImage.shape()': This creates the shape of the noise array. It has the exact shape of the grayscale image, to match the dimensions.
+     This NumPy noise array will have these dimensions [N° of Rows, N° of Columns, Number of RGB channels], which matches the images dimensions and RGB Channels.
+      
+STEP 4: Now, we ADD the Gaussian noise onto our original Grayscale image
+
+STEP 5: Lastly, we normalize the image. What this means is, we ensure every pixel value in our image is between 0.0 and 1.0
+ - This is because, after adding noise to our image, we might end up with pixel brightnesses that go below 0 or above 1. This
+  could happen with pixels close to 0 or 1 to begin with, so close 0 or 255 in the 8-Bit scale.
+   
+  '.clip()': If we have a pixel value that is -0.15 for example, it will be set to 0, after the clipping.
+             If a pixel value is 0.25 for example, it will remain 0.25, because it is in the 0 - 1 range.
+             If a pixel value is 1.12 for example, it will be set to 1 after the clipping.
+"""
+def gaussianNoise(image, mean, variance):
+    normalizedImage = image.astype(np.float32) / 255.00
+    standardDeviation = np.sqrt(variance)
+
+    gaussianNoise = np.random.normal(mean, standardDeviation, normalizedImage.shape)
+    noisyImage = normalizedImage + gaussianNoise
+    noisyImage = np.clip(noisyImage, 0.0, 1.0)
+    return noisyImage
 
 """
+BACKGROUND: 
 """
-def saltAndPepperNoise(image):
+def saltAndPepperNoise(image, amount):
+    normalizedImage = image.astype(np.float32) / 255.00
+
+    saltAndPepperNoise = np.random(normalizedImage.shape)
     return image
 #----- STEP 1 -----
 #We use the 'NumPY' library to open the self-portrait image
@@ -196,6 +239,21 @@ plt.plot(range(256), blueHistogram, color = 'blue')
 plt.fill_between(range(256), blueHistogram, color = 'blue')
 plt.show()
 
-#STEP 2
-grayscaleGaussianNoise = numPyImage.copy()
-grayscaleSaltAndPepper = numPyImage.copy()
+#STEP 2 - Applying Gaussian Noise && Salt and Pepper Noise to our Grayscale
+plt.figure(figsize = (15, 6))
+plt.subplot(1, 3, 1)
+plt.title("Original Grayscaled Image")
+plt.imshow(grayscaledImage)
+
+gaussianNoiseImage = grayscaleImage(numPyImage.copy(), 0.0, 0.02)
+plt.subplot(1, 3, 2)
+plt.title("Gaussian Noise")
+plt.imshow(gaussianNoiseImage)
+plt.axis("off")
+
+grayscaleSaltAndPepperImage = grayscaleImage(numPyImage.copy(), 0.09)
+plt.subplot(1, 3, 3)
+plt.title("Salt and Pepper Noise")
+plt.axis("off")
+plt.imshow(grayscaleSaltAndPepperImage)
+plt.show()
