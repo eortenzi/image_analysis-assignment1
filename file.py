@@ -2,6 +2,7 @@ import sklearn
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
+from scipy.ndimage import convolve
 from skimage.transform import resize
 """
 BACKGROUND: This method transforms our RGB image, into a grayscaled image. It is repeated for every pixel in the image.
@@ -205,6 +206,111 @@ def saltAndPepperNoise(image, amount):
 
     return noisyImage
 
+"""
+EDGE DETECTION: Refers to the process of finding the rapid changes in intensity in an image through the use of 
+ First or Second-Derivative Edge Detection techniques. Mathematically, it measures the changes in intensity 
+  horizontally and vertically. If the change is rapid and substantial, then it is a candidate to be an edge.
+   An edge could be the boundary of a foregound object next to the background, a rapid change in intensity within
+    the foreground object itself.
+     - In images, we find the change in pixel intensity vertically, so the columns, and horizonally, so the rows.
+        That means we have a horizontal and vertical derivative. After that we find the gradient magnitude, which 
+         essentially 'combines the horizontal and vertical partial derivatives together' but in a safe way that considers 
+          whether the change is positive (+) or negative (-), and if the gradient magnitude is HIGH, we most likely have an edge. 
+           IF it is low, we most likely don't.
+            - DETECTION TECHNIQUES: Since images can be very big, we use calculate the partial derivatives using HORIZONTAL and 
+             VERTICAL kernels/filters. First one we will look at is Roberts.
+
+BACKGROUND: This method will use the Roberts First-Order Derivate to outline the edges in our noisty grayscale images.
+ Roberts is unique because it considers a 2x2 neighbourhood of pixels, and measures the diagonal changes in intensity rather than the
+  vertical or horizontal. As we will see below, Roberts considers the changes between the TOP-LEFT (1) and BOTTOM-RIGHT (-1) pixel in the 'x' filter,
+  and the TOP-RIGHT (1) and BOTTOM-LEFT (-1) in the 'y' derivative. The (0) in the kernels mean these pixels do not contribute anything.
+
+STEP 1: We calculate the 'x' and 'y' partial derivatives by doing the following math: 
+ [KEY: PI = Pixel Intensity], In Python the 'convolve()' function does this for us.
+  
+  (1 * PI) + (0 * PI) + (0 * PI) + (-1 * PI) = 'x' Partial Derivative
+
+  (0 * PI) + (1 * PI) + (-1 * PI) + (0 * PI) = 'y' Partial Derivative
+
+STEP 2: We calculate the gradient magnitude for every pixel in the image! In other words, the gradient magnitude is how strong the intensity change is for this 2x2 neighbourhood. Mathematically it is:
+    
+    SQRT('x' Partial Derivative**2 + 'y' Partial Derivatives**2)
+
+     - NOTE: The GRADIENT MAGNITUDE is a NumPy array that represents the edge-only image. It comtains the diagonal values that arise from the 
+     'x' and 'y' derivatives!
+
+STEP 3: Once we have calculated the gradient magnitude, we return it.
+ - This image includes both strong and weak edges. Weaker edges are represented by a lighter shade of gray, while the stronger edges are
+  a stronger shade of white. NOTE: If we implemented thresholding, that would return a binary image, where all of the pixels that are ABOVE
+   the threshold are considered an edge and represented by 255. If they are below, they are not considered an edge, therefore they become part
+    of the background.
+
+STEP 4: Since we are acting on grayscale, and Roberts only works on images that store the total number of rows and columns but NOT including the RGB channels,
+ we need to convert our grayscale image into a [x, y] format. Remember, this is because our grayscale image was originally stored as [x, y, 3], and we set the same intensity
+  for each RGB channel. For Roberts, we use the '[:, :, 0]' line of code. This symbolizes that we are storing the total number of rows, total number of columns and the FIRST channel,
+   which is the RED RGB channel.
+"""
+def robertsEdgeDetection(image):
+    xFilter = np.array([
+        [1, 0],
+        [0, -1]
+        ])
+    yFilter = np.array([
+        [0, 1],
+        [-1, 0]
+        ])
+    
+    convertedImage = image.astype(np.float32)
+    convertedImage = convertedImage[:, :, 0]
+    xPartialDerivative = convolve(convertedImage, xFilter)
+    yPartialDerivative = convolve(convertedImage, yFilter)
+    gradientMagnitudeMap = np.sqrt((xPartialDerivative**2) + (yPartialDerivative**2)) 
+
+    return gradientMagnitudeMap
+
+def prewittEdgeDetection(image):
+    xFilter = np.array([
+        [1, 0, -1],
+        [1, 0, -1],
+        [1, 0, -1]
+        ])
+    yFilter = np.array([
+        [1, 1, 1],
+        [0, 0, 0],
+        [-1, -1, -1]
+        ])
+    convertedImage = image.astype(np.float32)
+    convertedImage = convertedImage[:, :, 0]
+    xPartialDerivative = convolve(convertedImage, xFilter)
+    yPartialDerivative = convolve(convertedImage, yFilter)
+    gradientMagnitudeMap = np.sqrt((xPartialDerivative**2) + (yPartialDerivative**2))
+
+    return gradientMagnitudeMap
+
+"""
+BACKGROUND: This method will implement the Canny First-Order Derivative Edge Detector. Its more complex, and uses the Sobel detection process as part of its process. 
+ - It is less susceptible to noise and can return a much more precise edge detection, but at a cost of being more computationally complex.
+"""
+def sobelEdgeDetection(image):
+    xFilter = np.array([
+        [-1, 0, 1],
+        [-2, 0, 2],
+        [-1, 0, 1]
+    ])
+    yFilter = np.array([
+        [-1, -2, -1],
+        [0, 0, 0],
+        [1, 2, 1]
+    ])
+
+    convertedImage = image.astype(np.float32)
+    convertedImage = convertedImage[:, :, 0]
+    xPartialDerivative = convolve(convertedImage, xFilter)
+    yPartialDerivative = convolve(convertedImage, yFilter)
+    gradientMagnitudeMap = np.sqrt((xPartialDerivative**2) + (yPartialDerivative**2))
+
+    return gradientMagnitudeMap
+
 #-----------------------
 #----- Question 1A -----
 #-----------------------
@@ -314,15 +420,81 @@ plt.show()
 #Apply Roberts, Prewitt, Sobel and Canny Edge Detectors in our Gaussian and S&G images
 
 #----- 1.C.1 - Apply Roberts Edge Detection (FIRST-ORDER Derivative)
-robertsImage = robertsEdgeDetection(grayscaledImage.copy())
+robertsGaussianImage = robertsEdgeDetection(gaussianNoiseImage.copy())
+robertsSaltAndPepperImage = robertsEdgeDetection(saltAndPepperImage.copy())
+plt.figure(figsize = (15, 10))
+plt.subplot(2, 2, 1)
+plt.title("Grayscale Image with Gaussian Noise")
+plt.axis("off")
+plt.imshow(gaussianNoiseImage)
+
+plt.subplot(2, 2, 2)
+plt.title("Roberts Edge Detection")
+plt.axis("off")
+plt.imshow(robertsGaussianImage, cmap = "gray")
+
+plt.subplot(2, 2, 3)
+plt.title("Grayscale Image with Salt and Pepper Noise")
+plt.axis("off")
+plt.imshow(saltAndPepperImage)
+
+plt.subplot(2, 2, 4)
+plt.title("Roberts Edge Detection")
+plt.axis("off")
+plt.imshow(robertsSaltAndPepperImage, cmap = "gray")
+plt.show()
 
 #----- 1.C.2 - Apply Prewitt Edge Detection (FIRST-ORDER Derivative)
-prewittImage = prewittEdgeDetection(grayscaledImage.copy())
+prewittGaussianNoiseImage = prewittEdgeDetection(gaussianNoiseImage.copy())
+prewittSaltAndPepperImage = prewittEdgeDetection(saltAndPepperImage.copy())
+plt.figure(figsize = (15, 10))
+plt.subplot(2, 2, 1)
+plt.title("Grayscale Image with Gaussian Noise")
+plt.axis("off")
+plt.imshow(gaussianNoiseImage)
+
+plt.subplot(2, 2, 2)
+plt.title("Prewitt Edge Detection")
+plt.axis("off")
+plt.imshow(prewittGaussianNoiseImage, cmap = "gray")
+
+plt.subplot(2, 2, 3)
+plt.title("Grayscale Image with Salt and Pepper Noise")
+plt.axis("off")
+plt.imshow(saltAndPepperImage)
+
+plt.subplot(2, 2, 4)
+plt.title("Prewitt Edge Detection")
+plt.axis("off")
+plt.imshow(prewittSaltAndPepperImage, cmap = "gray")
+plt.show()
 
 #----- 1.C.3 - Apply Sobel Edge Detection (FIRST-ORDER Derivative)
-sobelImage = sobelEdgeDetection(grayscaledImage.copy())
+sobelGaussianNoiseImage = sobelEdgeDetection(gaussianNoiseImage.copy())
+sobelSaltAndPepperImage = sobelEdgeDetection(saltAndPepperImage.copy())
+plt.figure(figsize = (15, 10))
+plt.subplot(2, 2, 1)
+plt.title("Grayscale Image with Gaussian Noise")
+plt.axis("off")
+plt.imshow(gaussianNoiseImage)
+
+plt.subplot(2, 2, 2)
+plt.title("Sobel Edge Detection")
+plt.axis("off")
+plt.imshow(sobelGaussianNoiseImage, cmap = "gray")
+
+plt.subplot(2, 2, 3)
+plt.title("Grayscale Image with Salt and Pepper Noise")
+plt.axis("off")
+plt.imshow(saltAndPepperImage)
+
+plt.subplot(2, 2, 4)
+plt.title("Sobel Edge Detection")
+plt.axis("off")
+plt.imshow(sobelSaltAndPepperImage, cmap = "gray")
+plt.show()
 
 #----- 1.C.4 - Apply Canny Edge Detection (Advanced FIRST-ORDER Derivative)
-cannyImage = cannyEdgeDetection(grayscaledImage.copy())
+#cannyImage = cannyEdgeDetection(grayscaledImage.copy())
 
 
