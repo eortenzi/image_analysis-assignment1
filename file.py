@@ -287,10 +287,6 @@ def prewittEdgeDetection(image):
 
     return gradientMagnitudeMap
 
-"""
-BACKGROUND: This method will implement the Canny First-Order Derivative Edge Detector. Its more complex, and uses the Sobel detection process as part of its process. 
- - It is less susceptible to noise and can return a much more precise edge detection, but at a cost of being more computationally complex.
-"""
 def sobelEdgeDetection(image):
     xFilter = np.array([
         [-1, 0, 1],
@@ -310,6 +306,83 @@ def sobelEdgeDetection(image):
     gradientMagnitudeMap = np.sqrt((xPartialDerivative**2) + (yPartialDerivative**2))
 
     return gradientMagnitudeMap
+
+"""
+BACKGROUND: This method will implement the Canny First-Order Derivative Edge Detector. Its more complex, and uses the Sobel detection process as part of its process. 
+ - It is less susceptible to noise and can return a much more precise edge detection, but at a cost of being more computationally complex.
+
+STEP 1: Guassian Smoothing. First thing we do is apply the Gaussian blur kernel. NOTE: This is NOT the Gaussian Noise Kernels. 
+ - The purpose of applying this 1 Guassian Blur kernel over our image is so if there are any pixels that are much higher or lower in intensity compared to the surrounding neighbourhood,
+    we find the weighted average of the neighbourhood to smooth it out. Within this 3x3 kernel that we see below, we give more weight to the pixels closest to the one we are trying to fix,
+     because it gives a more accurate result. 
+
+STEP 2:
+
+STEP 3:
+
+STEP 4:
+
+STEP 5:
+"""
+
+def cannyEdgeDetection(image):
+    blurFilter = np.array([
+        [1, 2, 1],
+        [2, 4, 2],
+        [1, 2, 1]
+        ])
+    convertedImage = image.astype(np.float32) / 16.00
+    blurredImage = convolve(convertedImage, blurFilter)
+
+    xSobelFilter = np.array([
+        [-1, 0, 1],
+        [-2, 0, 2],
+        [-1, 0, 1]
+        ])
+    ySobelFilter = np.array([
+        [-1, -2, -1],
+        [0, 0, 0],
+        [1, 2, 1]
+    ])
+    xPartialDerivative = convolve(blurredImage, xSobelFilter)
+    yPartialDerivative = convolve(blurredImage, ySobelFilter)
+    gradientMagnitudeMap = np.sqrt((xPartialDerivative**2) + (yPartialDerivative**2))
+    gradientDirection = np.arctan2(yPartialDerivative, xPartialDerivative)
+    thinnedEdgesImage = np.zeros_like(gradientMagnitudeMap)
+
+    for x in range(1, image.shape[0] - 1):
+        for y in range(1, image.shape[1] - 1):
+            angle = np.rad2deg(gradientDirection[x, y])
+            angle = (angle + 180) % 180
+            current = gradientMagnitudeMap[x, y]
+
+            if angle < 22.5 or angle >= 157.5:
+                neighbour1 = gradientMagnitudeMap[x, y - 1]
+                neighbour2 = gradientMagnitudeMap[x, y + 1]
+
+            elif angle < 67.5:
+                neighbour1 = gradientMagnitudeMap[x - 1, y + 1]
+                neighbour2 = gradientMagnitudeMap[x + 1, y - 1]
+
+            elif angle < 112.5:
+                neighbour1 = gradientMagnitudeMap[x - 1, y]
+                neighbour2 = gradientMagnitudeMap[x + 1, y]
+
+            else:
+                neighbour1 = gradientMagnitudeMap[x - 1, y - 1]
+                neighbour2 = gradientMagnitudeMap[x + 1, y + 1]
+
+            if current >= neighbour1 and current >= neighbour2:
+                thinnedEdgesImage[x, y] = current
+
+    lowerBoundThreshold = 30
+    higherBoundThreshold = 80
+
+    strongEdges = thinnedEdgesImage >= higherBoundThreshold
+    weakEdges = ((thinnedEdgesImage >= lowerBoundThreshold) & (thinnedEdgesImage < higherBoundThreshold))
+
+
+    return image
 
 #-----------------------
 #----- Question 1A -----
@@ -495,6 +568,8 @@ plt.imshow(sobelSaltAndPepperImage, cmap = "gray")
 plt.show()
 
 #----- 1.C.4 - Apply Canny Edge Detection (Advanced FIRST-ORDER Derivative)
-#cannyImage = cannyEdgeDetection(grayscaledImage.copy())
+cannyGaussianNoiseImage = cannyEdgeDetection(gaussianNoiseImage.copy())
+cannySaltAndPepperNoise = cannyEdgeDetection(saltAndPepperImage.copy())
+
 
 
